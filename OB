@@ -1,45 +1,48 @@
-from flask import Flask, request
-import json
-import requests
+<?php
  
-app = Flask(__name__)
+$strAccessToken = "B/axPS4KeXTcKR2FWrtTe7yZJ1AeV031sHvHVgNb8MCPSwGR+rLCBkKHZAhldJ8eSlPN7ZB+/coZfSXushe2VRblvKUa6WbH3PENC31dGFioBCFBQLIs/xhCw78oRXF8Tfp0eLMoqxMUzOdfDiwY1wdB04t89/1O/w1cDnyilFU=";
  
-@app.route('/')
-def index():
-    return "Hello World!"
-# ส่วน callback สำหรับ Webhook
-@app.route('/callback', methods=['POST'])
-def callback():
-    json_line = request.get_json()
-    json_line = json.dumps(json_line)
-    decoded = json.loads(json_line)
-    user = decoded["events"][0]['replyToken']
-    #id=[d['replyToken'] for d in user][0]
-    #print(json_line)
-    print("ผู้ใช้：",user)
-    sendText(user,'-..-') # ส่งข้อความ งง
-    return '',200
+$content = file_get_contents('php://input');
+$arrJson = json_decode($content, true);
  
-def sendText(user, text):
-    LINE_API = 'https://api.line.me/v2/bot/message/reply'
-    Authorization = 'B/axPS4KeXTcKR2FWrtTe7yZJ1AeV031sHvHVgNb8MCPSwGR+rLCBkKHZAhldJ8eSlPN7ZB+/coZfSXushe2VRblvKUa6WbH3PENC31dGFioBCFBQLIs/xhCw78oRXF8Tfp0eLMoqxMUzOdfDiwY1wdB04t89/1O/w1cDnyilFU=' # ใส่ ENTER_ACCESS_TOKEN เข้าไป
+$strUrl = "https://api.line.me/v2/bot/message/reply";
  
-    headers = {
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Authorization':Authorization
-    }
+$arrHeader = array();
+$arrHeader[] = "Content-Type: application/json";
+$arrHeader[] = "Authorization: Bearer {$strAccessToken}";
  
-    data = json.dumps({
-        "replyToken":user,
-        "messages":[{
-            "type":"text",
-            "text":text
-        }]
-    })
+if($arrJson['events'][0]['message']['text'] == "สวัสดี"){
+  $arrPostData = array();
+  $arrPostData['replyToken'] = $arrJson['events'][0]['replyToken'];
+  $arrPostData['messages'][0]['type'] = "text";
+  $arrPostData['messages'][0]['text'] = "สวัสดี ID คุณคือ ".$arrJson['events'][0]['source']['userId'];
+}else if($arrJson['events'][0]['message']['text'] == "ชื่ออะไร"){
+  $arrPostData = array();
+  $arrPostData['replyToken'] = $arrJson['events'][0]['replyToken'];
+  $arrPostData['messages'][0]['type'] = "text";
+  $arrPostData['messages'][0]['text'] = "ฉันยังไม่มีชื่อนะ";
+}else if($arrJson['events'][0]['message']['text'] == "ทำอะไรได้บ้าง"){
+  $arrPostData = array();
+  $arrPostData['replyToken'] = $arrJson['events'][0]['replyToken'];
+  $arrPostData['messages'][0]['type'] = "text";
+  $arrPostData['messages'][0]['text'] = "ฉันทำอะไรไม่ได้เลย คุณต้องสอนฉันอีกเยอะ";
+}else{
+  $arrPostData = array();
+  $arrPostData['replyToken'] = $arrJson['events'][0]['replyToken'];
+  $arrPostData['messages'][0]['type'] = "text";
+  $arrPostData['messages'][0]['text'] = "ฉันไม่เข้าใจคำสั่ง";
+}
  
-    #print("ข้อมูล：",data)
-    r = requests.post(LINE_API, headers=headers, data=data) # ส่งข้อมูล
-    #print(r.text)
  
-if __name__ == '__main__':
-     app.run(debug=True)
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL,$strUrl);
+curl_setopt($ch, CURLOPT_HEADER, false);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, $arrHeader);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($arrPostData));
+curl_setopt($ch, CURLOPT_RETURNTRANSFER,true);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+$result = curl_exec($ch);
+curl_close ($ch);
+ 
+?>
